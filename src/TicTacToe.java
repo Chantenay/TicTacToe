@@ -1,8 +1,23 @@
-import java.util.Scanner;
+import java.util.ArrayList;
 
-public class TicTacToe {
+import javafx.application.Application;
+import javafx.scene.Group;
+import javafx.scene.Scene;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+
+public class TicTacToe extends Application {
     //game board
     static String[][] board = {{" ", " ", " "}, {" ", " ", " "}, { " ", " ", " "}};
+
+    Rec[][] rectangles = {{null, null, null}, {null, null, null}, {null, null, null}};
+
+    Rec highlighted = null;
+
+    Group root = new Group();
+
+    int turns = 0;
 
     //checks if there is a winner
     static boolean checkWinner() {
@@ -62,15 +77,84 @@ public class TicTacToe {
         }
     }
 
-    public static void main(String[] args) {
+    static int[] snapToGrid(Rec rec) {
+        int x;
+        int y;
 
-        Scanner in = new Scanner(System.in);
+        int boardPlacementX = -1;;
+        int boardPlacementY = -1;;
+
+        if (rec.getLayoutX() > 0 && rec.getLayoutX() < 200) {
+            x = 25;
+            boardPlacementX = 0;
+        } else if (rec.getLayoutX() > 200 && rec.getLayoutX() < 400) {
+            x = 225;
+            boardPlacementX = 1;
+        } else if (rec.getLayoutX() > 400 && rec.getLayoutX() < 600) {
+            x = 425;
+            boardPlacementX = 2;
+        } else {
+            x = -1;
+        }
+
+        if (rec.getLayoutY() > 0 && rec.getLayoutY() < 200) {
+            y = 25;
+            boardPlacementY = 0;
+        } else if (rec.getLayoutY() > 200 && rec.getLayoutY() < 400) {
+            y = 225;
+            boardPlacementY = 1;
+        } else if (rec.getLayoutY() > 400 && rec.getLayoutY() < 600) {
+            y = 425;
+            boardPlacementY = 2;
+        } else {
+            y = -1;
+        }
+
+        if (!addToBoard(boardPlacementX, boardPlacementY, rec.type)) {
+            return new int[]{-1, -1};
+        }
+
+        return new int[]{x, y};
+    }
+
+    static boolean addToBoard(int x, int y, String type) {
+        if (x != -1 && y != -1) {
+            if (board[x][y].equals(" ")) {
+                board[x][y] = type;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Board");
+        Scene scene = new Scene(root, 800, 600);
+        primaryStage.setScene(scene);
+
+        for(int i = 0; i < 600; i = i + 200) {
+            for(int j = 0; j < 600; j = j + 200) {
+                Rectangle r = new Rectangle(199, 199);
+                r.setLayoutX(i);
+                r.setLayoutY(j);
+                r.setFill(Color.LIGHTGRAY);
+
+                root.getChildren().add(r);
+            }
+        }
+
+
+        primaryStage.show();
+
+        Rec x = new Rec(150, 150, "X");
+        root.getChildren().add(x);
 
         boolean finished = false;
 
         int turnCounter = 0;
 
-        while (!finished) {
+       /* while (!finished) {
 
             printBoard();
 
@@ -78,15 +162,9 @@ public class TicTacToe {
 
             System.out.println("X's turn: Enter placement as xy");
 
-            int input = in.nextInt();
-
-            while(checkValidInput(input, "X")) {
-                System.out.println("Invalid Input, Try Again: ");
-                input = in.nextInt();
-            }
-
+            Rec x = new Rec(150, 150, "X");
+            root.getChildren().add(x);
             turnCounter++;
-
             printBoard();
 
             //check if won
@@ -97,21 +175,17 @@ public class TicTacToe {
             }
 
             //check draw
-            if(turnCounter == 9) {
+            if (turnCounter == 9) {
                 System.out.println("DRAW");
                 break;
             }
 
             //o's turn
 
-            System.out.println("O's turn: Enter placement as xy");
-
-            int oInput = in.nextInt();
-
-            while(checkValidInput(oInput, "O")){
-                System.out.println("Invalid Input, Try Again: ");
-                oInput = in.nextInt();
-            }
+            Rec o = new Rec(150, 150, "X");
+            root.getChildren().add(o);
+            turnCounter++;
+            printBoard();
 
             //check if won
 
@@ -121,7 +195,86 @@ public class TicTacToe {
             }
 
             turnCounter++;
-        }
+        }*/
+
+
     }
 
+    class Rec extends Rectangle {
+        String type;
+
+        double mouseX;
+        double mouseY;
+
+        Rec (double x, double y, String type){
+            super(x, y);
+
+            this.type = type;
+
+            this.setLayoutX(625);
+            this.setLayoutY(225);
+
+            if (type.equals("X")) {
+                 this.setFill(Color.RED);
+            } else {
+                this.setFill(Color.BLUE);
+            }
+
+            this.setOnMousePressed(event -> {
+                mouseX = event.getSceneX();
+                mouseY = event.getSceneY();
+                this.toFront();
+            });
+
+            this.setOnMouseDragged(event -> {
+                this.setLayoutX(event.getSceneX() - 75);
+                this.setLayoutY(event.getSceneY() - 75);
+
+            });
+
+            this.setOnMouseReleased(event -> {
+                int[] array = snapToGrid(this);
+
+                //check valid placement
+                if(array[0] != -1 && array[1] != -1) {
+                    this.setLayoutX(array[0]);
+                    this.setLayoutY(array[1]);
+
+                    Rectangle rectangle = new Rectangle(150, 150);
+                    rectangle.setFill(this.fillProperty().getValue());
+                    rectangle.setLayoutX(array[0]);
+                    rectangle.setLayoutY(array[1]);
+
+                    root.getChildren().add(rectangle);
+                    root.getChildren().remove(this);
+
+                    turns++;
+                    //check if won
+                    if (checkWinner()) {
+                        //end the game
+                    }
+                    //check if draw
+                    else if (turns == 9) {
+                        //end the game
+                    }
+                    //start next turn
+                    else {
+                        String newType = "X";
+                        if (this.type.equals("X")) {
+                            newType = "O";
+                        }
+                        Rec newRec = new Rec(150, 150, newType);
+                        root.getChildren().add(newRec);
+                    }
+                } else {
+                    Rec newRec = new Rec(150, 150, this.type);
+                    root.getChildren().add(newRec);
+                    root.getChildren().remove(this);
+                }
+
+            });
+
+        }
+
+    }
 }
