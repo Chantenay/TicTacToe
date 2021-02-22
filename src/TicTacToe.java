@@ -1,19 +1,22 @@
-import java.util.ArrayList;
-
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 public class TicTacToe extends Application {
     //game board
     static String[][] board = {{" ", " ", " "}, {" ", " ", " "}, { " ", " ", " "}};
 
-    Rec[][] rectangles = {{null, null, null}, {null, null, null}, {null, null, null}};
+    //rectangles representing game board
+    Rectangle[][] rectangles = {{null, null, null}, {null, null, null}, {null, null, null}};
 
-    Rec highlighted = null;
+    Rectangle highlighted = null;
 
     Group root = new Group();
 
@@ -21,7 +24,6 @@ public class TicTacToe extends Application {
 
     //checks if there is a winner
     static boolean checkWinner() {
-
         //check diagonal
         //top - bottom
         if(board[2][0].equals(board[1][1]) && board[2][0].equals(board[0][2]) && !board[2][0].equals(" ")) {
@@ -49,61 +51,33 @@ public class TicTacToe extends Application {
         return false;
     }
 
-    //Checks input and if valid adds to the board
-    static boolean checkValidInput(int input, String tile) {
-
-        int y = input / 10;
-
-        int x = input % 10;
-
-        if(x > 3 || x < 1 || y > 3 || y < 1) {
-            return true;
-        }
-
-        if(!board[x - 1][y - 1].equals(" ")) {
-            return true;
-        }
-
-        board[x - 1][y - 1] = tile;
-        return false;
-    }
-
-    static void printBoard() {
-
-        System.out.println("   1   2   3");
-
-        for(int i = 0; i < 3; i++) {
-            System.out.println(i + 1 + "  " + board[i][0] + " | " + board[i][1] +" | " + board[i][2]);
-        }
-    }
-
-    static int[] snapToGrid(Rec rec) {
+    static int[] snapToGrid(double initX, double initY, Rec rec) {
         int x;
         int y;
 
         int boardPlacementX = -1;;
         int boardPlacementY = -1;;
 
-        if (rec.getLayoutX() > 0 && rec.getLayoutX() < 200) {
+        if (initX > 0 && initX < 200) {
             x = 25;
             boardPlacementX = 0;
-        } else if (rec.getLayoutX() > 200 && rec.getLayoutX() < 400) {
+        } else if (initX > 200 && initX < 400) {
             x = 225;
             boardPlacementX = 1;
-        } else if (rec.getLayoutX() > 400 && rec.getLayoutX() < 600) {
+        } else if (initX > 400 && initX < 600) {
             x = 425;
             boardPlacementX = 2;
         } else {
             x = -1;
         }
 
-        if (rec.getLayoutY() > 0 && rec.getLayoutY() < 200) {
+        if (initY > 0 && initY < 200) {
             y = 25;
             boardPlacementY = 0;
-        } else if (rec.getLayoutY() > 200 && rec.getLayoutY() < 400) {
+        } else if (initY > 200 && initY < 400) {
             y = 225;
             boardPlacementY = 1;
-        } else if (rec.getLayoutY() > 400 && rec.getLayoutY() < 600) {
+        } else if (initY > 400 && initY < 600) {
             y = 425;
             boardPlacementY = 2;
         } else {
@@ -117,6 +91,38 @@ public class TicTacToe extends Application {
         return new int[]{x, y};
     }
 
+    void highlightNearest(double x, double y) {
+        if (highlighted != null) {
+            highlighted.setFill(Color.LIGHTGREY);
+        }
+
+        int xLoc = 0;
+        int yLoc = 0;
+
+        if (x > 0 && x < 200) {
+            xLoc = 0;
+        } else if (x > 200 && x < 400) {
+            xLoc = 1;
+        } else {
+            xLoc = 2;
+        }
+
+        if (y > 0 && y < 200) {
+            yLoc = 0;
+        } else if (y > 200 && y < 400) {
+            yLoc = 1;
+        } else {
+            yLoc = 2;
+        }
+
+        highlighted = rectangles[xLoc][yLoc];
+        if(board[xLoc][yLoc].equals(" ")) {
+            highlighted.setFill(Color.GREEN);
+        } else {
+            highlighted.setFill(Color.RED);
+        }
+    }
+
     static boolean addToBoard(int x, int y, String type) {
         if (x != -1 && y != -1) {
             if (board[x][y].equals(" ")) {
@@ -127,6 +133,7 @@ public class TicTacToe extends Application {
         return false;
     }
 
+
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Board");
@@ -136,6 +143,9 @@ public class TicTacToe extends Application {
         for(int i = 0; i < 600; i = i + 200) {
             for(int j = 0; j < 600; j = j + 200) {
                 Rectangle r = new Rectangle(199, 199);
+
+                rectangles[i/200][j/200] = r;
+
                 r.setLayoutX(i);
                 r.setLayoutY(j);
                 r.setFill(Color.LIGHTGRAY);
@@ -144,60 +154,11 @@ public class TicTacToe extends Application {
             }
         }
 
-
         primaryStage.show();
 
+        //Start game with x token
         Rec x = new Rec(150, 150, "X");
         root.getChildren().add(x);
-
-        boolean finished = false;
-
-        int turnCounter = 0;
-
-       /* while (!finished) {
-
-            printBoard();
-
-            //x 's turn
-
-            System.out.println("X's turn: Enter placement as xy");
-
-            Rec x = new Rec(150, 150, "X");
-            root.getChildren().add(x);
-            turnCounter++;
-            printBoard();
-
-            //check if won
-
-            if (checkWinner()) {
-                System.out.println("X WON!");
-                break;
-            }
-
-            //check draw
-            if (turnCounter == 9) {
-                System.out.println("DRAW");
-                break;
-            }
-
-            //o's turn
-
-            Rec o = new Rec(150, 150, "X");
-            root.getChildren().add(o);
-            turnCounter++;
-            printBoard();
-
-            //check if won
-
-            if (checkWinner()) {
-                System.out.println("O WON!");
-                break;
-            }
-
-            turnCounter++;
-        }*/
-
-
     }
 
     class Rec extends Rectangle {
@@ -206,8 +167,13 @@ public class TicTacToe extends Application {
         double mouseX;
         double mouseY;
 
+        private double x, y;
+
         Rec (double x, double y, String type){
             super(x, y);
+
+            this.x = x;
+            this.y = y;
 
             this.type = type;
 
@@ -215,7 +181,7 @@ public class TicTacToe extends Application {
             this.setLayoutY(225);
 
             if (type.equals("X")) {
-                 this.setFill(Color.RED);
+                 this.setFill(Color.HOTPINK);
             } else {
                 this.setFill(Color.BLUE);
             }
@@ -223,17 +189,27 @@ public class TicTacToe extends Application {
             this.setOnMousePressed(event -> {
                 mouseX = event.getSceneX();
                 mouseY = event.getSceneY();
+
+                this.x = super.getLayoutX();
+                this.y = super.getLayoutY();
+
                 this.toFront();
             });
 
             this.setOnMouseDragged(event -> {
-                this.setLayoutX(event.getSceneX() - 75);
-                this.setLayoutY(event.getSceneY() - 75);
+                this.setLayoutX(this.x + event.getSceneX() - mouseX);
+                this.setLayoutY(this.y +  event.getSceneY() - mouseY);
 
+                highlightNearest(event.getSceneX(), event.getSceneY());
             });
 
             this.setOnMouseReleased(event -> {
-                int[] array = snapToGrid(this);
+                int[] array = snapToGrid(event.getSceneX(), event.getSceneY(), this);
+
+                if ( highlighted != null) {
+                    highlighted.setFill(Color.LIGHTGREY);
+                    highlighted = null;
+                }
 
                 //check valid placement
                 if(array[0] != -1 && array[1] != -1) {
@@ -252,10 +228,20 @@ public class TicTacToe extends Application {
                     //check if won
                     if (checkWinner()) {
                         //end the game
+                        String winTextFill = "" + this.type + " WINS!";
+                        Text winText = new Text(150, 350, winTextFill);
+                        winText.setFill(Color.BLACK);
+                        winText.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 120));
+                        root.getChildren().add(winText);
                     }
                     //check if draw
                     else if (turns == 9) {
                         //end the game
+                        String winTextFill = "DRAW!";
+                        Text winText = new Text(190, 340, winTextFill);
+                        winText.setFill(Color.BLACK);
+                        winText.setFont(Font.font("verdana", FontWeight.BOLD, FontPosture.REGULAR, 120));
+                        root.getChildren().add(winText);
                     }
                     //start next turn
                     else {
